@@ -1,0 +1,6 @@
+[package]
+name = "rust_borrowing"
+version = "0.0.1"
+authors = [ "Michal B. <michal2229@gmail.com>" ]
+
+[dependencies]
