@@ -70,3 +70,15 @@ cargo build && cargo run
 cargo build --release && cargo run
 ```
 
+## sample images
+
+![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-16.png)
+
+![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-20.png)
+
+![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-30.png)
+
+![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-50.png)
+
+![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-54-01.png)
+
