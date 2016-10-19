@@ -163,11 +163,12 @@ fn main() {
     
     let mut nframes: u64 = 0;
    
-    let mut sdl_ctx_vid = sdl2::init().video().unwrap();
+    let mut sdl_ctx = sdl2::init().unwrap();
+    let mut sdl_ctx_vid = sdl_ctx.video().unwrap();
     //let gl_attr = sdl_ctx_vid.gl_attr();
 
     // window object
-    let win = sdl_ctx_vid.window("Rust on SDL2", screen_shape[0], screen_shape[1])
+    let win = sdl_ctx_vid.window(&"Rust on SDL2", screen_shape[0], screen_shape[1])
         .position_centered()
         .opengl()
         .build()
@@ -181,7 +182,7 @@ fn main() {
     //gl_attr.set_multisample_samples(4);
 
     // orange texture
-    let mut texturerg = rnd.create_texture_streaming(PixelFormatEnum::RGB24, (tex_res, tex_res)).unwrap();
+    let mut texturerg = rnd.create_texture_streaming(PixelFormatEnum::RGB24, tex_res, tex_res).unwrap();
     texturerg.with_lock(None, |buffer: &mut [u8], p: usize| {
         for y in (0..tex_res) {
             for x in (0..tex_res) {
@@ -194,7 +195,7 @@ fn main() {
     }).unwrap();
     
     // blue texture
-    let mut texturegb = rnd.create_texture_streaming(PixelFormatEnum::RGB24, (tex_res, tex_res)).unwrap();
+    let mut texturegb = rnd.create_texture_streaming(PixelFormatEnum::RGB24, tex_res, tex_res).unwrap();
     texturegb.with_lock(None, |buffer: &mut [u8], p: usize| {
         for y in (0..tex_res) {
             for x in (0..tex_res) {
@@ -226,11 +227,11 @@ fn main() {
         for n in &vecnodes {
             if (n.c >= 0.0) {
                 rnd.copy(&texturerg, None, 
-                            Some(Rect::new_unwrap(n.px as i32,n.py as i32, 
+                            Some(Rect::new(n.px as i32,n.py as i32, 
                                                 (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) );
             } else {
                 rnd.copy(&texturegb, None, 
-                            Some(Rect::new_unwrap(n.px as i32,n.py as i32, 
+                            Some(Rect::new(n.px as i32,n.py as i32, 
                                                 (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) );
             }
         }
@@ -238,7 +239,7 @@ fn main() {
         rnd.present(); // rendering
     
         // handling events
-        for event in sdl_ctx_vid.event_pump().poll_iter() {
+        for event in sdl_ctx.event_pump().unwrap().poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { run = false },
 //                Event::KeyDown { keycode: Some(Keycode::W), .. } => { vecpos2d[1] -= 10 },
