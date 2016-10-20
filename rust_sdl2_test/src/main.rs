@@ -20,15 +20,17 @@ extern crate rand;
 use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Rect;
 use sdl2::keyboard::Keycode;
-use std::ops::Rem;
-use std::num;
+//use std::ops::Rem;
+//use std::num;
 //use std::sync::mpsc;
-use std::{thread, time};
-use std::sync::{Arc, Mutex};
+use std::thread;
+//use std::time;
+use std::sync::Arc;
+//use std::sync::Mutex;
 //use sdl2::video::GLProfile;
 use rand::Rng;
 use sdl2::event::Event;
-use std::cmp;
+//use std::cmp;
 
 
 #[derive(Copy, Clone)]
@@ -50,26 +52,27 @@ fn emit_node(v: &mut Vec<Node>, x: f64, y:f64, vx:f64, vy:f64, m: f64, c: f64) {
 
 fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
     let sqrn2 = (n as f64/2.0).sqrt() as f64;
-    let thresholdn = n/2;
-    let centery = 400.0;
+    //let thresholdn = n/2;
+    let centery = 240.0;
+    let centerx = 320.0;
     let radius =  200.0;
     
     // init random number generator
     let mut rng = rand::thread_rng();
     
-    for i in (0..n/2) {
+    for i in 0..n/2 {
         let x: f64 = (i as f64 % sqrn2)/10.0 + rng.gen::<f64>()/10.0;
         let y: f64 = (i as f64 / sqrn2)/10.0 + rng.gen::<f64>()/10.0;
         
-        let node = Node {m: 10.0, c: 10.0, px: 640.0 + x, py: centery - y - radius , vx: 12.0 + rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: 10.0, px: centerx + x, py: centery - y - radius , vx: 12.0 + rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
     
-    for i in (0..n/2) {
+    for i in 0..n/2 {
         let x: f64 = (i as f64 % sqrn2)/10.0 + rng.gen::<f64>()/10.0;
         let y: f64 = (i as f64 / sqrn2)/10.0 + rng.gen::<f64>()/10.0;
 
-        let node = Node {m: 10.0, c: -10.0, px: 640.0 + x, py: centery + y + radius, vx: -12.0 - rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: -10.0, px: centerx + x, py: centery + y + radius, vx: -12.0 - rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
 }
@@ -79,7 +82,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
 fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
     let mut threadsv = vec![];
         
-    for i in (0..v.len()) {
+    for i in 0..v.len() {
         let n_c = (&v[i]).clone();
         let vec_ac = Arc::new(v.to_vec()).clone();
         
@@ -87,13 +90,13 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
             //println!("T{}...", i);
             
             // delay
-            //if (i == 1) {thread::sleep(time::Duration::from_millis(100))};
+            //if i == 1 {thread::sleep(time::Duration::from_millis(100))};
         
             let mut fv = (0.0, 0.0); 
         
-            for j in (0..vec_ac.len()) {
+            for j in 0..vec_ac.len() {
             
-                if (i == j) { continue; }
+                if i == j { continue; }
                 assert!(i != j);
             
                 let n = &n_c;       // from node
@@ -125,7 +128,7 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
     let th_ret: Vec<(f64, f64)> = threadsv.into_iter().map(|t| t.join().unwrap()).collect();
     //println!(" >: {:?}", th_ret);
     
-    for i in (0..v.len()) {
+    for i in 0..v.len() {
         let mut n = &mut v[i];
         let  fv   = &th_ret[i];
         n.fx = fv.0;
@@ -153,7 +156,7 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
 
 
 fn main() {
-    let screen_shape: Vec<u32> = vec![1280, 800];  
+    let screen_shape: Vec<u32> = vec![640, 480];  
     let tex_res: u32 = 1;  
     
     let n = 256;
@@ -163,9 +166,9 @@ fn main() {
     
     let mut nframes: u64 = 0;
    
-    let mut sdl_ctx = sdl2::init().unwrap();
-    let mut sdl_ctx_vid = sdl_ctx.video().unwrap();
-    //let gl_attr = sdl_ctx_vid.gl_attr();
+    let sdl_ctx = sdl2::init().unwrap();
+    let sdl_ctx_vid = sdl_ctx.video().unwrap();
+    let gl_attr = sdl_ctx_vid.gl_attr();
 
     // window object
     let win = sdl_ctx_vid.window(&"Rust on SDL2", screen_shape[0], screen_shape[1])
@@ -178,14 +181,14 @@ fn main() {
     let mut rnd = win.renderer().build().unwrap();
     
     // Enable anti-aliasing
-    //gl_attr.set_multisample_buffers(1);
-    //gl_attr.set_multisample_samples(4);
+    gl_attr.set_multisample_buffers(1);
+    gl_attr.set_multisample_samples(4);
 
     // orange texture
     let mut texturerg = rnd.create_texture_streaming(PixelFormatEnum::RGB24, tex_res, tex_res).unwrap();
     texturerg.with_lock(None, |buffer: &mut [u8], p: usize| {
-        for y in (0..tex_res) {
-            for x in (0..tex_res) {
+        for y in 0..tex_res {
+            for x in 0..tex_res {
                 let t: usize = (y*p as u32 + x*3) as usize;
                 buffer[t + 0] = 255;
                 buffer[t + 1] = 128;
@@ -197,8 +200,8 @@ fn main() {
     // blue texture
     let mut texturegb = rnd.create_texture_streaming(PixelFormatEnum::RGB24, tex_res, tex_res).unwrap();
     texturegb.with_lock(None, |buffer: &mut [u8], p: usize| {
-        for y in (0..tex_res) {
-            for x in (0..tex_res) {
+        for y in 0..tex_res {
+            for x in 0..tex_res {
                 let t: usize = (y*p as u32 + x*3) as usize;
                 buffer[t + 0] = 50;
                 buffer[t + 1] = 128;
@@ -216,23 +219,25 @@ fn main() {
         
         // emiting new particles
         let vnum = vecnodes.len();
-        if (vnum < n) {
-            if (nframes % 1 == 0) {
-                emit_node(&mut vecnodes, 500.0,  400.0,  7.0 + (nframes % 10) as f64 / 10.0,  7.0, 20.0,-20.0);
-                emit_node(&mut vecnodes, 780.0,  400.0, -7.0 - (nframes % 10) as f64 / 10.0, -7.0, 20.0, 20.0);
+        if vnum < n {
+            if nframes % 1 == 0 {
+                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f64,  (screen_shape[1]/2) as f64,  7.0 + (nframes % 10) as f64 / 10.0,  7.0, 20.0,-20.0);
+                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f64,  (screen_shape[1]/2) as f64, -7.0 - (nframes % 10) as f64 / 10.0, -7.0, 20.0, 20.0);
             }
         }
         
         // drawing particles
         for n in &vecnodes {
-            if (n.c >= 0.0) {
-                rnd.copy(&texturerg, None, 
-                            Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) );
+            if n.c >= 0.0 {
+                match rnd.copy(&texturerg, None,Some(Rect::new(n.px as i32,n.py as i32, 
+                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) ) {
+                    Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
+                }
             } else {
-                rnd.copy(&texturegb, None, 
-                            Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) );
+                match rnd.copy(&texturegb, None, Some(Rect::new(n.px as i32,n.py as i32, 
+                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) ) {
+                    Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
+                }
             }
         }
 
