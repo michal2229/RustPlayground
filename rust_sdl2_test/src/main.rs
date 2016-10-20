@@ -159,12 +159,15 @@ fn main() {
     let screen_shape: Vec<u32> = vec![640, 480];  
     let tex_res: u32 = 1;  
     
-    let n = 256;
+    let n = 2048;
     let mut vecnodes: Vec<Node> = Vec::new();
 
     let mut run = true;
     
     let mut nframes: u64 = 0;
+    
+    
+    let mut rng = rand::thread_rng();
    
     let sdl_ctx = sdl2::init().unwrap();
     let sdl_ctx_vid = sdl_ctx.video().unwrap();
@@ -221,8 +224,18 @@ fn main() {
         let vnum = vecnodes.len();
         if vnum < n {
             if nframes % 1 == 0 {
-                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f64,  (screen_shape[1]/2) as f64,  7.0 + (nframes % 10) as f64 / 10.0,  7.0, 20.0,-20.0);
-                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f64,  (screen_shape[1]/2) as f64, -7.0 - (nframes % 10) as f64 / 10.0, -7.0, 20.0, 20.0);
+                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f64 + rng.gen::<f64>(),  
+                    (screen_shape[1]/2) as f64 + rng.gen::<f64>(),  
+                    7.0 + (nframes % 10) as f64 / 10.0,  
+                    7.0, 
+                    20.0,
+                    -20.0);
+                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f64 + rng.gen::<f64>(),  
+                    (screen_shape[1]/2) as f64 + rng.gen::<f64>(), 
+                    -7.0 - (nframes % 10) as f64 / 10.0, 
+                    -7.0, 
+                    20.0, 
+                    20.0);
             }
         }
         
@@ -230,12 +243,12 @@ fn main() {
         for n in &vecnodes {
             if n.c >= 0.0 {
                 match rnd.copy(&texturerg, None,Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) ) {
+                                                (1.0+n.m/25.0) as u32, (1.0+n.m/25.0) as u32) ) ) {
                     Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
                 }
             } else {
                 match rnd.copy(&texturegb, None, Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/10.0) as u32, (1.0+n.m/10.0) as u32) ) ) {
+                                                (1.0+n.m/25.0) as u32, (1.0+n.m/25.0) as u32) ) ) {
                     Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
                 }
             }
@@ -256,7 +269,7 @@ fn main() {
         }
         
         // updating nodes forces, accel, vel, positions
-        update_nodes_vec(&mut vecnodes, 0.05);
+        update_nodes_vec(&mut vecnodes, 0.01);
         
         // updating frame counter
         nframes += 1;
