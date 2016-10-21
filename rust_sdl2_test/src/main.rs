@@ -35,23 +35,23 @@ use sdl2::event::Event;
 
 #[derive(Copy, Clone)]
 struct Node {
-    m:  f64, // mass
-    c:  f64, // charge per mass unit
-    px: f64, py: f64, // position
-    vx: f64, vy: f64, // velocity
-    ax: f64, ay: f64, // acceleration
-    fx: f64, fy: f64  // force
+    m:  f32, // mass
+    c:  f32, // charge per mass unit
+    px: f32, py: f32, // position
+    vx: f32, vy: f32, // velocity
+    ax: f32, ay: f32, // acceleration
+    fx: f32, fy: f32  // force
 }
 
 
-fn emit_node(v: &mut Vec<Node>, x: f64, y:f64, vx:f64, vy:f64, m: f64, c: f64) {
+fn emit_node(v: &mut Vec<Node>, x: f32, y:f32, vx:f32, vy:f32, m: f32, c: f32) {
     let node = Node {m: m, c: c, px: x, py: y, vx: vx, vy: vy, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
     v.push(node);
 }
 
 
 fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
-    let sqrn2 = (n as f64/2.0).sqrt() as f64;
+    let sqrn2 = (n as f32/2.0).sqrt() as f32;
     //let thresholdn = n/2;
     let centery = 240.0;
     let centerx = 320.0;
@@ -61,27 +61,27 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
     let mut rng = rand::thread_rng();
     
     for i in 0..n/2 {
-        let x: f64 = (i as f64 % sqrn2)/10.0 + rng.gen::<f64>()/10.0;
-        let y: f64 = (i as f64 / sqrn2)/10.0 + rng.gen::<f64>()/10.0;
+        let x: f32 = (i as f32 % sqrn2)/10.0 + rng.gen::<f32>()/10.0;
+        let y: f32 = (i as f32 / sqrn2)/10.0 + rng.gen::<f32>()/10.0;
         
-        let node = Node {m: 10.0, c: 10.0, px: centerx + x, py: centery - y - radius , vx: 12.0 + rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: 10.0, px: centerx + x, py: centery - y - radius , vx: 24.0 + rng.gen::<f32>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
     
     for i in 0..n/2 {
-        let x: f64 = (i as f64 % sqrn2)/10.0 + rng.gen::<f64>()/10.0;
-        let y: f64 = (i as f64 / sqrn2)/10.0 + rng.gen::<f64>()/10.0;
+        let x: f32 = (i as f32 % sqrn2)/10.0 + rng.gen::<f32>()/10.0;
+        let y: f32 = (i as f32 / sqrn2)/10.0 + rng.gen::<f32>()/10.0;
 
-        let node = Node {m: 10.0, c: -10.0, px: centerx + x, py: centery + y + radius, vx: -12.0 - rng.gen::<f64>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: -10.0, px: centerx + x, py: centery + y + radius, vx: -24.0 - rng.gen::<f32>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
 }
 
 
 // computing forces, velocities, positions
-fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
+fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
     let vec_a = Arc::new(v.to_vec());
-    let mut threadsv = vec![];
+    let mut threadsv = Vec::with_capacity(v.len());
         
     for i in 0..v.len() {
         let n_c = (&v[i]).clone();
@@ -95,22 +95,25 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
         
             let mut fv = (0.0, 0.0); 
         
-            for j in 0..vec_ac.len() {
+            for j in 0..vec_ac.len() {  // 13% core::iter::range iterator 
             
                 if i == j { continue; }
-                assert!(i != j);
+                //assert!(i != j);
             
                 let n = &n_c;       // from node
-                let m = &vec_ac[j]; // to node
+                let m = &vec_ac[j]; // to node //6% alloc..arc..Arc; 16% collections..vec..Vec core ops index
             
                 let dnm  = (m.px - n.px, m.py - n.py);                  // distance vector
-                let d    = ((dnm.0).powi(2) + (dnm.1).powi(2) ).sqrt(); // distance scalar
+                //let d    = ((dnm.0).powi(2) + (dnm.1).powi(2) ).sqrt(); // distance scalar // 14% powi
+                let d    = (dnm.0*dnm.0 + dnm.1*dnm.1).sqrt(); // distance scalar
                 let dirv = (dnm.0/d, dnm.1/d);                          // direction vector
                 
-                let fg   = 10.0*n.m*m.m/(d.powi(2));     // gravity force scalar
+                //let fg   = 10.0*n.m*m.m/(d.powi(2));     // gravity force scalar  // 7% powi
+                let fg   = 10.0*n.m*m.m/(d*d);     // gravity force scalar
                 let fgnm = (fg*dirv.0, fg*dirv.1); // gravity force vector
                 
-                let fc   = -10.0*n.c*m.c/(d.powi(2));    // coulomb force scalar
+                //let fc   = -10.0*n.c*m.c/(d.powi(2));    // coulomb force scalar  // 7% powi
+                let fc   = -10.0*n.c*m.c/(d*d);    // coulomb force scalar
                 let fcnm = (fc*dirv.0, fc*dirv.1); // coulomb force vector
                 
                 fv.0 += fgnm.0 + fcnm.0;  // result force vector - x
@@ -126,7 +129,7 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
         &threadsv.push(child);
     }
     
-    let th_ret: Vec<(f64, f64)> = threadsv.into_iter().map(|t| t.join().unwrap()).collect();
+    let th_ret: Vec<(f32, f32)> = threadsv.into_iter().map(|t| t.join().unwrap()).collect();
     //println!(" >: {:?}", th_ret);
     
     for i in 0..v.len() {
@@ -215,7 +218,7 @@ fn main() {
     }).unwrap();
     
     // generate nodes
-    init_nodes_vec(&mut vecnodes, 32);
+    init_nodes_vec(&mut vecnodes, 1024);
       
     // main loop
     while run {
@@ -225,16 +228,16 @@ fn main() {
         let vnum = vecnodes.len();
         if vnum < n {
             if nframes % 1 == 0 {
-                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f64 + rng.gen::<f64>(),  
-                    (screen_shape[1]/2) as f64 + rng.gen::<f64>(),  
-                    7.0 + (nframes % 10) as f64 / 10.0,  
-                    7.0, 
+                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(),  
+                    (screen_shape[1]/2) as f32 + rng.gen::<f32>(),  
+                    10.0 + (nframes % 10) as f32 / 10.0,  
+                    10.0, 
                     20.0,
                     -20.0);
-                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f64 + rng.gen::<f64>(),  
-                    (screen_shape[1]/2) as f64 + rng.gen::<f64>(), 
-                    -7.0 - (nframes % 10) as f64 / 10.0, 
-                    -7.0, 
+                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(),  
+                    (screen_shape[1]/2) as f32 + rng.gen::<f32>(), 
+                    -10.0 - (nframes % 10) as f32 / 10.0, 
+                    -10.0, 
                     20.0, 
                     20.0);
             }
@@ -270,7 +273,7 @@ fn main() {
         }
         
         // updating nodes forces, accel, vel, positions
-        update_nodes_vec(&mut vecnodes, 0.01);
+        update_nodes_vec(&mut vecnodes, 0.05);
         
         // updating frame counter
         nframes += 1;
