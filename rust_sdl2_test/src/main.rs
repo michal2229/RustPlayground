@@ -80,11 +80,12 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
 
 // computing forces, velocities, positions
 fn update_nodes_vec(v: &mut Vec<Node>, dt: f64) {
+    let vec_a = Arc::new(v.to_vec());
     let mut threadsv = vec![];
         
     for i in 0..v.len() {
         let n_c = (&v[i]).clone();
-        let vec_ac = Arc::new(v.to_vec()).clone();
+        let vec_ac = vec_a.clone();
         
         let child = thread::spawn(move || {            
             //println!("T{}...", i);
