@@ -59,20 +59,21 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
     
     // init random number generator
     let mut rng = rand::thread_rng();
+    let sp = 1.0;
     
     for i in 0..n/2 {
-        let x: f32 = (i as f32 % sqrn2)/10.0 + rng.gen::<f32>()/10.0;
-        let y: f32 = (i as f32 / sqrn2)/10.0 + rng.gen::<f32>()/10.0;
+        let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
+        let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
         
-        let node = Node {m: 10.0, c: 10.0, px: centerx + x, py: centery - y - radius , vx: 24.0 + rng.gen::<f32>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: 5.0, px: centerx - x, py: centery - y - radius , vx: -9.0 + rng.gen::<f32>()/4.0, vy: 3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
     
     for i in 0..n/2 {
-        let x: f32 = (i as f32 % sqrn2)/10.0 + rng.gen::<f32>()/10.0;
-        let y: f32 = (i as f32 / sqrn2)/10.0 + rng.gen::<f32>()/10.0;
+        let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
+        let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
 
-        let node = Node {m: 10.0, c: -10.0, px: centerx + x, py: centery + y + radius, vx: -24.0 - rng.gen::<f32>()/4.0, vy: 0.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: -5.0, px: centerx + x, py: centery + y + radius, vx: 9.0 - rng.gen::<f32>()/4.0, vy: -3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
 }
@@ -81,6 +82,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
 // computing forces, velocities, positions
 fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
     let vec_a = Arc::new(v.to_vec());
+    //let vec_a = v.to_vec();
     let mut threadsv = Vec::with_capacity(v.len());
         
     for i in 0..v.len() {
@@ -95,21 +97,28 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
         
             let mut fv = (0.0, 0.0); 
         
-            for j in 0..vec_ac.len() {  // 13% core::iter::range iterator 
+            //for j in 0..vec_ac.len() {  // 13% core::iter::range iterator 
+            //for m in vec_ac.iter().by_ref() {  // 40% core slice iter
+            for m in vec_ac.iter() {  // FIXME: 40% core slice iter - main bottleneck 
             
-                if i == j { continue; }
+                //if i == j { continue; }
                 //assert!(i != j);
             
                 let n = &n_c;       // from node
-                let m = &vec_ac[j]; // to node //6% alloc..arc..Arc; 16% collections..vec..Vec core ops index
+                if n.px == m.px && n.py == m.py { continue; }
+                //let m = &vec_ac[j]; // to node //6% alloc..arc..Arc; 16% collections..vec..Vec core ops index
+                
+                let dthr = n.m;                
             
                 let dnm  = (m.px - n.px, m.py - n.py);                  // distance vector
                 //let d    = ((dnm.0).powi(2) + (dnm.1).powi(2) ).sqrt(); // distance scalar // 14% powi
-                let d    = (dnm.0*dnm.0 + dnm.1*dnm.1).sqrt(); // distance scalar
+                let mut d    = (dnm.0*dnm.0 + dnm.1*dnm.1).sqrt(); // distance scalar
+                if d < dthr {d = dthr;}
                 let dirv = (dnm.0/d, dnm.1/d);                          // direction vector
                 
                 //let fg   = 10.0*n.m*m.m/(d.powi(2));     // gravity force scalar  // 7% powi
-                let fg   = 10.0*n.m*m.m/(d*d);     // gravity force scalar
+
+                let fg = 10.0*n.m*m.m/(d*d);     // gravity force scalar
                 let fgnm = (fg*dirv.0, fg*dirv.1); // gravity force vector
                 
                 //let fc   = -10.0*n.c*m.c/(d.powi(2));    // coulomb force scalar  // 7% powi
@@ -142,8 +151,8 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
         n.ax = av.0;
         n.ay = av.1;
         
-        //let kv = 0.9999;  // drag
-        let kv = 1.0;  // drag
+        let kv = 1.0 - 0.001*dt;  // drag
+        //let kv = 1.0;  // drag
         
         let mut vv = (n.vx + av.0*dt, n.vy + av.1*dt);
         vv.0 *= kv;
@@ -163,7 +172,7 @@ fn main() {
     let screen_shape: Vec<u32> = vec![640, 480];  
     let tex_res: u32 = 1;  
     
-    let n = 2048;
+    let n = 1024;
     let mut vecnodes: Vec<Node> = Vec::new();
 
     let mut run = true;
@@ -218,7 +227,7 @@ fn main() {
     }).unwrap();
     
     // generate nodes
-    init_nodes_vec(&mut vecnodes, 1024);
+    //init_nodes_vec(&mut vecnodes, n as u32 /2);
       
     // main loop
     while run {
@@ -227,34 +236,32 @@ fn main() {
         // emiting new particles
         let vnum = vecnodes.len();
         if vnum < n {
+            let em0 = ( (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2) as f32 + rng.gen::<f32>() );
+            let em1 = ( (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2) as f32 + rng.gen::<f32>() );
+        
             if nframes % 1 == 0 {
-                emit_node(&mut vecnodes, (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(),  
-                    (screen_shape[1]/2) as f32 + rng.gen::<f32>(),  
-                    10.0 + (nframes % 10) as f32 / 10.0,  
-                    10.0, 
-                    20.0,
-                    -20.0);
-                emit_node(&mut vecnodes, (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(),  
-                    (screen_shape[1]/2) as f32 + rng.gen::<f32>(), 
-                    -10.0 - (nframes % 10) as f32 / 10.0, 
-                    -10.0, 
-                    20.0, 
-                    20.0);
+                emit_node(&mut vecnodes, em0.0, em0.1,  
+                    10.0, 10.0, 
+                    10.0, -5.0);
+                emit_node(&mut vecnodes, em1.0, em1.1,  
+                    -10.0, -10.0, 
+                    10.0, 5.0);
             }
         }
         
         // drawing particles
         for n in &vecnodes {
-            if n.c >= 0.0 {
-                match rnd.copy(&texturerg, None,Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/25.0) as u32, (1.0+n.m/25.0) as u32) ) ) {
-                    Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
-                }
-            } else {
-                match rnd.copy(&texturegb, None, Some(Rect::new(n.px as i32,n.py as i32, 
-                                                (1.0+n.m/25.0) as u32, (1.0+n.m/25.0) as u32) ) ) {
-                    Result::Ok(val) => val, Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
-                }
+            let r = (1.0+(n.m - 10.0)/10.0) as u32;
+            let x = n.px as i32;
+            let y = n.py as i32;
+            let tex = {
+                if n.c >= 0.0 { &texturerg } 
+                else { &texturegb }
+            };
+            
+            match rnd.copy(tex, None, Some(Rect::new(x, y, r, r) ) ) {
+                Result::Ok(val) => val, 
+                Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
             }
         }
 
@@ -273,7 +280,7 @@ fn main() {
         }
         
         // updating nodes forces, accel, vel, positions
-        update_nodes_vec(&mut vecnodes, 0.05);
+        update_nodes_vec(&mut vecnodes, 0.1);
         
         // updating frame counter
         nframes += 1;
