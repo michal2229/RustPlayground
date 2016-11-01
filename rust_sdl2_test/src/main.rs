@@ -172,7 +172,7 @@ fn main() {
     let screen_shape: Vec<u32> = vec![640, 480];  
     let tex_res: u32 = 1;  
     
-    let n = 1024;
+    let n = 2048;
     let mut vecnodes: Vec<Node> = Vec::new();
 
     let mut run = true;
@@ -280,7 +280,7 @@ fn main() {
         }
         
         // updating nodes forces, accel, vel, positions
-        update_nodes_vec(&mut vecnodes, 0.1);
+        update_nodes_vec(&mut vecnodes, 0.025);
         
         // updating frame counter
         nframes += 1;
