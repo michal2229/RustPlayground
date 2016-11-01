@@ -151,7 +151,8 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
         n.ax = av.0;
         n.ay = av.1;
         
-        let kv = 1.0 - 0.001*dt;  // drag
+        //let kv = 1.0 - 0.001*dt;  // drag
+        let kv = 1.0;  // drag
         //let kv = 1.0;  // drag
         
         let mut vv = (n.vx + av.0*dt, n.vy + av.1*dt);
