@@ -67,7 +67,7 @@ cargo build && cargo run
 
 
 ```bash
-cargo build --release && cargo run
+cargo build --release && cargo run --release
 ```
 
 ## controls
