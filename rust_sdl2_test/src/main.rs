@@ -43,6 +43,34 @@ struct Node {
     fx: f32, fy: f32  // force
 }
 
+impl Node {
+    fn get_position_tuple_f32(&self) -> (f32, f32) { (self.px, self.py) }
+    
+    fn get_diameter_f32(&self) -> f32 {
+        //(1.0+(self.m - 10.0)/10.0)
+        1.0
+    }
+    
+    fn draw(&self, 
+            renderer: &mut sdl2::render::Renderer, 
+            textup: (&sdl2::render::Texture, &sdl2::render::Texture)) {
+        // size
+        let diam = self.get_diameter_f32() as u32;
+        
+        // position
+        let (posx, posy) = self.get_position_tuple_f32();
+        
+        // texture
+        let tex = { if self.c >= 0.0 { &textup.0 } else { &textup.1 } };
+
+        // actual rendering
+        match renderer.copy(tex, None, Some(Rect::new(posx as i32, posy as i32, diam, diam) ) ) {
+            Result::Ok(val) => val, 
+            Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
+        }
+    }
+}
+
 
 fn emit_node(v: &mut Vec<Node>, x: f32, y:f32, vx:f32, vy:f32, m: f32, c: f32) {
     let node = Node {m: m, c: c, px: x, py: y, vx: vx, vy: vy, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
@@ -65,7 +93,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
         let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
         let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
         
-        let node = Node {m: 10.0, c: 5.0, px: centerx - x, py: centery - y - radius , vx: -9.0 + rng.gen::<f32>()/4.0, vy: 3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: 5.0, px: centerx - x, py: centery - y - radius , vx: -16.0 + rng.gen::<f32>()/4.0, vy: 3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
     
@@ -73,7 +101,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
         let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
         let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
 
-        let node = Node {m: 10.0, c: -5.0, px: centerx + x, py: centery + y + radius, vx: 9.0 - rng.gen::<f32>()/4.0, vy: -3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: -5.0, px: centerx + x, py: centery + y + radius, vx: 16.0 - rng.gen::<f32>()/4.0, vy: -3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
 }
@@ -237,8 +265,8 @@ fn main() {
         // emiting new particles
         let vnum = vecnodes.len();
         if vnum < n {
-            let em0 = ( (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2) as f32 + rng.gen::<f32>() );
-            let em1 = ( (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2) as f32 + rng.gen::<f32>() );
+            let em0 = ( (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2 + 32) as f32 + rng.gen::<f32>() );
+            let em1 = ( (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2 - 32) as f32 + rng.gen::<f32>() );
         
             if nframes % 1 == 0 {
                 emit_node(&mut vecnodes, em0.0, em0.1,  
@@ -252,18 +280,7 @@ fn main() {
         
         // drawing particles
         for n in &vecnodes {
-            let r = (1.0+(n.m - 10.0)/10.0) as u32;
-            let x = n.px as i32;
-            let y = n.py as i32;
-            let tex = {
-                if n.c >= 0.0 { &texturerg } 
-                else { &texturegb }
-            };
-            
-            match rnd.copy(tex, None, Some(Rect::new(x, y, r, r) ) ) {
-                Result::Ok(val) => val, 
-                Result::Err(err) => panic!("rnd.copy() not ok!: {:?}", err),
-            }
+            n.draw(&mut rnd, (&texturerg, &texturegb));
         }
 
         rnd.present(); // rendering
@@ -281,7 +298,7 @@ fn main() {
         }
         
         // updating nodes forces, accel, vel, positions
-        update_nodes_vec(&mut vecnodes, 0.025);
+        update_nodes_vec(&mut vecnodes, 0.01);
         
         // updating frame counter
         nframes += 1;
