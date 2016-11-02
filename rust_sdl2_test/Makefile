@@ -1,13 +1,16 @@
 all: main
 
 main: ./src/*.rs
-	cargo build && cargo run
+	cargo build --release
 
 debug: ./src/*.rs
 	cargo build && cargo run
 	
-release: ./src/*.rs
-	cargo build --release && cargo run --release
+run: ./src/*.rs
+	cargo run --release
+	
+debugrun: ./src/*.rs
+	cargo run
 
 valgrind: ./src/*.rs
 	cargo build

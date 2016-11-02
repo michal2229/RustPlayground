@@ -53,12 +53,18 @@ impl Node {
     
     fn draw(&self, 
             renderer: &mut sdl2::render::Renderer, 
-            textup: (&sdl2::render::Texture, &sdl2::render::Texture)) {
+            textup: (&sdl2::render::Texture, &sdl2::render::Texture),
+            canvasscale:   f32,
+            canvaspan:    (f32, f32),
+            screencenter: (f32, f32)) {
         // size
         let diam = self.get_diameter_f32() as u32;
         
         // position
-        let (posx, posy) = self.get_position_tuple_f32();
+        let post = self.get_position_tuple_f32();
+        // mapping from canvas pos to screen pos
+        let (posx, posy) = ((post.0 + canvaspan.0)*canvasscale + screencenter.0, 
+                            (post.1 + canvaspan.1)*canvasscale + screencenter.1);
         
         // texture
         let tex = { if self.c >= 0.0 { &textup.0 } else { &textup.1 } };
@@ -81,8 +87,8 @@ fn emit_node(v: &mut Vec<Node>, x: f32, y:f32, vx:f32, vy:f32, m: f32, c: f32) {
 fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
     let sqrn2 = (n as f32/2.0).sqrt() as f32;
     //let thresholdn = n/2;
-    let centery = 240.0;
-    let centerx = 320.0;
+    let centery = 0.0;
+    let centerx = 0.0;
     let radius =  200.0;
     
     // init random number generator
@@ -93,7 +99,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
         let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
         let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
         
-        let node = Node {m: 10.0, c: 5.0, px: centerx - x, py: centery - y - radius , vx: -16.0 + rng.gen::<f32>()/4.0, vy: 3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: 5.0, px: centerx - x, py: centery - y - radius , vx: -32.0 + rng.gen::<f32>()/4.0, vy: 3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
     
@@ -101,7 +107,7 @@ fn init_nodes_vec(v: &mut Vec<Node>, n: u32) {
         let x: f32 = ((i as f32 % sqrn2) + rng.gen::<f32>())*sp;
         let y: f32 = ((i as f32 / sqrn2) + rng.gen::<f32>())*sp;
 
-        let node = Node {m: 10.0, c: -5.0, px: centerx + x, py: centery + y + radius, vx: 16.0 - rng.gen::<f32>()/4.0, vy: -3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
+        let node = Node {m: 10.0, c: -5.0, px: centerx + x, py: centery + y + radius, vx: 32.0 - rng.gen::<f32>()/4.0, vy: -3.0, ax: 0.0, ay: 0.0, fx: 0.0, fy: 0.0, };
         v.push(node);
     }
 }
@@ -136,7 +142,7 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
                 if n.px == m.px && n.py == m.py { continue; }
                 //let m = &vec_ac[j]; // to node //6% alloc..arc..Arc; 16% collections..vec..Vec core ops index
                 
-                let dthr = n.m;                
+                let dthr = 4.0;                
             
                 let dnm  = (m.px - n.px, m.py - n.py);                  // distance vector
                 //let d    = ((dnm.0).powi(2) + (dnm.1).powi(2) ).sqrt(); // distance scalar // 14% powi
@@ -198,7 +204,11 @@ fn update_nodes_vec(v: &mut Vec<Node>, dt: f32) {
 
 
 fn main() {
-    let screen_shape: Vec<u32> = vec![640, 480];  
+    let     screen_shape_tup:    (u32, u32) = (640, 480); // screen dimensions (x,y)
+    let mut canvas_pan_tup:      (f32, f32) = (0.0, 0.0); // translation of canvas coords
+    let mut canvas_dynamics_tup: (f32, f32, f32) = (0.0, 0.0, 1.0); // speed of dynamics change (vpanx, vpany, vzoom)
+    let mut canvas_zoom:          f32       = 1.0;        // zoom of canvas surface points from (0,0)
+    
     let tex_res: u32 = 1;  
     
     let n = 2048;
@@ -206,6 +216,7 @@ fn main() {
 
     let mut run = true;
     
+    // frame counter
     let mut nframes: u64 = 0;
     
     
@@ -216,7 +227,7 @@ fn main() {
     let gl_attr = sdl_ctx_vid.gl_attr();
 
     // window object
-    let win = sdl_ctx_vid.window(&"Rust on SDL2", screen_shape[0], screen_shape[1])
+    let win = sdl_ctx_vid.window(&"Rust on SDL2", screen_shape_tup.0, screen_shape_tup.1)
         .position_centered()
         .opengl()
         .build()
@@ -265,22 +276,22 @@ fn main() {
         // emiting new particles
         let vnum = vecnodes.len();
         if vnum < n {
-            let em0 = ( (screen_shape[0]/2 - 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2 + 32) as f32 + rng.gen::<f32>() );
-            let em1 = ( (screen_shape[0]/2 + 200) as f32 + rng.gen::<f32>(), (screen_shape[1]/2 - 32) as f32 + rng.gen::<f32>() );
+            let em0 = ( (-200) as f32 + rng.gen::<f32>(), (32) as f32 + rng.gen::<f32>() );
+            let em1 = ( (200) as f32 + rng.gen::<f32>(), (-32) as f32 + rng.gen::<f32>() );
         
             if nframes % 1 == 0 {
                 emit_node(&mut vecnodes, em0.0, em0.1,  
                     10.0, 10.0, 
-                    10.0, -5.0);
+                    20.0, -10.0);
                 emit_node(&mut vecnodes, em1.0, em1.1,  
                     -10.0, -10.0, 
-                    10.0, 5.0);
+                    20.0, 10.0);
             }
         }
         
         // drawing particles
         for n in &vecnodes {
-            n.draw(&mut rnd, (&texturerg, &texturegb));
+            n.draw(&mut rnd, (&texturerg, &texturegb), canvas_zoom, canvas_pan_tup, (320.0, 240.0));
         }
 
         rnd.present(); // rendering
@@ -289,13 +300,26 @@ fn main() {
         for event in sdl_ctx.event_pump().unwrap().poll_iter() {
             match event {
                 Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => { run = false },
-//                Event::KeyDown { keycode: Some(Keycode::W), .. } => { vecpos2d[1] -= 10 },
-//                Event::KeyDown { keycode: Some(Keycode::S), .. } => { vecpos2d[1] += 10 },
-//                Event::KeyDown { keycode: Some(Keycode::A), .. } => { vecpos2d[0] -= 10 },
-//                Event::KeyDown { keycode: Some(Keycode::D), .. } => { vecpos2d[0] += 10 },
+                Event::KeyDown { keycode: Some(Keycode::D), .. } => { canvas_dynamics_tup.0 =-10.0/canvas_zoom },
+                Event::KeyDown { keycode: Some(Keycode::A), .. } => { canvas_dynamics_tup.0 = 10.0/canvas_zoom },
+                Event::KeyDown { keycode: Some(Keycode::S), .. } => { canvas_dynamics_tup.1 =-10.0/canvas_zoom },
+                Event::KeyDown { keycode: Some(Keycode::W), .. } => { canvas_dynamics_tup.1 = 10.0/canvas_zoom },
+                Event::KeyDown { keycode: Some(Keycode::KpPlus), .. } => { canvas_dynamics_tup.2 = 1.05 },
+                Event::KeyDown { keycode: Some(Keycode::KpMinus), .. } => { canvas_dynamics_tup.2 = 0.95 },
+                Event::KeyUp { keycode: Some(Keycode::D), .. } => { canvas_dynamics_tup.0 = 0.0 },
+                Event::KeyUp { keycode: Some(Keycode::A), .. } => { canvas_dynamics_tup.0 = 0.0 },
+                Event::KeyUp { keycode: Some(Keycode::S), .. } => { canvas_dynamics_tup.1 = 0.0 },
+                Event::KeyUp { keycode: Some(Keycode::W), .. } => { canvas_dynamics_tup.1 = 0.0 },
+                Event::KeyUp { keycode: Some(Keycode::KpPlus), .. } => { canvas_dynamics_tup.2 = 1.0 },
+                Event::KeyUp { keycode: Some(Keycode::KpMinus), .. } => { canvas_dynamics_tup.2 = 1.0 },
                 _ => {}
             }
         }
+        
+        // updating pan tuple
+        canvas_pan_tup.0 += canvas_dynamics_tup.0;
+        canvas_pan_tup.1 += canvas_dynamics_tup.1;
+        canvas_zoom      *= canvas_dynamics_tup.2;
         
         // updating nodes forces, accel, vel, positions
         update_nodes_vec(&mut vecnodes, 0.01);

@@ -70,6 +70,11 @@ cargo build && cargo run
 cargo build --release && cargo run
 ```
 
+## controls
+
+* screen panning: W/S/A/D 
+* zoom: +/-
+
 ## sample images
 
 ![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/animated1.gif)
