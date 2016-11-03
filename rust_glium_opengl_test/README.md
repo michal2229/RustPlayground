@@ -4,7 +4,7 @@
 
 Playing with OpenGL in Rustlang.
 
-An object is loaded from *\*.obj* file and displayed, while its position is being changed each frame. 
+An object is loaded from *.obj* file and displayed, while its position is being changed each frame. 
 
 The code is based on [Glium examples](https://github.com/tomaka/glium/tree/master/examples). 
 
@@ -16,6 +16,16 @@ Run in terminal:
 cargo build --release
 cargo run --release
 ```
+
+Building phase:
+
+![screen0](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen0.png)
+
+Running phase (two object clusters orbiting each other + interaction of objects inside clusters):
+
+![screen1](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen1.png)
+
+Not much to see so far. Hopefully I will have the time to do something interesting with it.
 
 ## about [Glium](https://github.com/tomaka/glium)
 
