@@ -8,11 +8,9 @@ use glium::glutin;
 mod support;
 
 fn main() {
-    use glium::DisplayBuild;
+    let dt: f32 = 0.01;
 
-    println!("This example draws 1000 instanced teapots. Each teapot gets a random position and \
-              direction at initialization. Then the CPU updates and uploads the positions of each \
-              teapot at each frame.");
+    use glium::DisplayBuild;
 
     // building the display, ie. the main object
     let display = glutin::WindowBuilder::new()
@@ -26,12 +24,19 @@ fn main() {
 
     // list of teapots with position and direction
     let mut teapots = (0 .. 1000)
-        .map(|_| {
-            let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let dir: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = (pos.0 * 1.5 - 0.75, pos.1 * 1.5 - 0.75, pos.2 * 1.5 - 0.75);
-            let dir = (dir.0 * 1.5 - 0.75, dir.1 * 1.5 - 0.75, dir.2 * 1.5 - 0.75);
-            (pos, dir)
+        .map(|i| {
+            let dir = {if i < 500 {-1.0} else {1.0}};
+        
+        
+            let pos: (f32, f32, f32) = (rand::random(), rand::random(), 0.0);
+            let pos = (pos.0/10.0, pos.1/10.0 + dir*0.5, pos.2 * 1.5 - 0.75);
+            
+            let vel: (f32, f32, f32) = (0.0, rand::random(), 0.0);
+            let vel = (dir*0.1, (vel.1 * 1.5 - 0.75)/10.0, 0.0);
+            
+            let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
+            
+            (pos, vel, acc)
         })
         .collect::<Vec<_>>();
 
@@ -68,7 +73,7 @@ fn main() {
                 v_position = position;
                 v_normal = normal;
                 v_color = vec3(float(gl_InstanceID) / 1000.0, 1.0, 1.0);
-                gl_Position = vec4(position * 0.00025 + world_position, 1.0);
+                gl_Position = vec4(position * 0.0001 + world_position, 1.0);
             }
         ",
         "
@@ -96,10 +101,52 @@ fn main() {
         // updating the teapots
         {
             let mut mapping = per_instance.map();
+            let tpcopy = teapots.to_vec();
+            
             for (src, dest) in teapots.iter_mut().zip(mapping.iter_mut()) {
-                (src.0).0 += (src.1).0 * 0.001;
-                (src.0).1 += (src.1).1 * 0.001;
-                (src.0).2 += (src.1).2 * 0.001;
+                
+                
+                let mut fv: (f32, f32, f32) = (0.0, 0.0, 0.0); // force vector
+                
+                let tm = 1.0; // this mass
+                let tx = (src.0); // this position
+                
+                for other_src in &tpcopy { // m iteruje
+                    let om = 1.0;       // other mass
+                    let ox = (other_src.0); // other position
+                    
+                    if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
+                    
+                    let dthr = 0.1;                
+            
+                    let dnm  = (ox.0 - tx.0, ox.1 - tx.1, 0.0);                  // distance vector
+                    let mut d    = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
+                    if d < dthr {d = dthr;}
+                    let dirv = (dnm.0/d, dnm.1/d, dnm.2/d);                          // direction vector
+                    
+
+                    let fg = 0.0001*tm*om/(d*d);     // gravity force scalar
+                    let fgnm = (fg*dirv.0, fg*dirv.1, fg*dirv.2); // gravity force vector
+                    
+                    fv.0 += fgnm.0;
+                    fv.1 += fgnm.1;
+                    fv.2 += fgnm.2;
+                }
+                
+                // a = f/m
+                (src.2).0 = fv.0/tm;
+                (src.2).1 = fv.1/tm;
+                (src.2).2 = fv.2/tm;
+
+                // v = v + a*t
+                (src.1).0 += (src.2).0*dt;
+                (src.1).1 += (src.2).1*dt;
+                (src.1).2 += (src.2).2*dt;
+            
+                // x = x + v*t
+                (src.0).0 += (src.1).0*dt;
+                (src.0).1 += (src.1).1*dt;
+                (src.0).2 += (src.1).2*dt;
 
                 dest.world_position = src.0;
             }
