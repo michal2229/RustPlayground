@@ -15,6 +15,7 @@ fn main() {
     // building the display, ie. the main object
     let display = glutin::WindowBuilder::new()
         .with_depth_buffer(24)
+        .with_multisampling(4 as u16)
         .build_glium()
         .unwrap();
 
@@ -29,10 +30,14 @@ fn main() {
         
         
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = (pos.0/10.0, pos.1/10.0 + dir*0.5, pos.2/10.0 + dir*0.5);
+            let pos = ( pos.0*0.1 + dir*0.3, 
+                        pos.1*0.1 + dir*0.3, 
+                        pos.2*0.1 + dir*0.2 );
             
-            let vel: (f32, f32, f32) = (0.0, rand::random(), 0.0);
-            let vel = (dir*0.1, (vel.1 * 1.5 - 0.75)/10.0, 0.0);
+            let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
+            let vel = ( (vel.0 * 1.5 - 0.75)*0.5 + dir*0.1, 
+                        (vel.1 * 1.5 - 0.75)*0.5 - dir*0.1, 
+                        (vel.2 * 1.5 - 0.75)*0.5 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
             
@@ -75,8 +80,8 @@ fn main() {
             void main() {
                 v_position = position;
                 v_normal = normal;
-                v_color = vec3(float(gl_InstanceID) / 1000.0, 0.5, 1.0 - float(gl_InstanceID) / 1000.0);
-                gl_Position = persp_matrix * view_matrix * vec4(position * 0.01 + world_position, 1.0);
+                v_color = vec3(float(gl_InstanceID) / 1000.0, 0.25, 1.0 - float(gl_InstanceID) / 1000.0);
+                gl_Position = persp_matrix * view_matrix * vec4(position * 0.0025 + world_position, 1.0);
             }
         ",
         "
@@ -90,7 +95,7 @@ fn main() {
 
             void main() {
                 float lum = max(dot(normalize(v_normal), normalize(LIGHT)), 0.0);
-                vec3 color = (0.3 + 0.7 * lum) * v_color;
+                vec3 color = (0.2 + 0.7 * lum) * v_color;
                 f_color = vec4(color, 1.0);
             }
         ",
