@@ -19,7 +19,7 @@ fn main() {
         .unwrap();
 
     // building the vertex and index buffers
-    let vertex_buffer = support::load_wavefront(&display, include_bytes!("models/model.obj"));
+    let vertex_buffer = support::load_wavefront(&display, include_bytes!("models/icosphere.obj"));
     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
     // list of teapots with position and direction
@@ -28,7 +28,7 @@ fn main() {
             let dir = {if i < 500 {-1.0} else {1.0}};
         
         
-            let pos: (f32, f32, f32) = (rand::random(), rand::random(), 0.0);
+            let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
             let pos = (pos.0/10.0, pos.1/10.0 + dir*0.5, pos.2 * 1.5 - 0.75);
             
             let vel: (f32, f32, f32) = (0.0, rand::random(), 0.0);
@@ -72,7 +72,7 @@ fn main() {
             void main() {
                 v_position = position;
                 v_normal = normal;
-                v_color = vec3(float(gl_InstanceID) / 1000.0, 1.0, 1.0);
+                v_color = vec3(float(gl_InstanceID) / 1000.0, 0.5, 1.0 - float(gl_InstanceID) / 1000.0);
                 gl_Position = vec4(position * 0.0001 + world_position, 1.0);
             }
         ",
@@ -109,17 +109,17 @@ fn main() {
                 let mut fv: (f32, f32, f32) = (0.0, 0.0, 0.0); // force vector
                 
                 let tm = 1.0; // this mass
-                let tx = (src.0); // this position
+                let tx = src.0; // this position
                 
                 for other_src in &tpcopy { // m iteruje
                     let om = 1.0;       // other mass
-                    let ox = (other_src.0); // other position
+                    let ox = other_src.0; // other position
                     
                     if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
                     
                     let dthr = 0.1;                
             
-                    let dnm  = (ox.0 - tx.0, ox.1 - tx.1, 0.0);                  // distance vector
+                    let dnm  = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
                     let mut d    = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
                     if d < dthr {d = dthr;}
                     let dirv = (dnm.0/d, dnm.1/d, dnm.2/d);                          // direction vector
