@@ -17,7 +17,7 @@ cargo build --release
 cargo run --release
 ```
 
-Building phase:
+Building phase (first build is slow, but rebuild is many times faster):
 
 ![screen0](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen0.png)
 
