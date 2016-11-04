@@ -113,56 +113,58 @@ impl CameraState {
         let u = (s.1 * f.2 - s.2 * f.1,
                  s.2 * f.0 - s.0 * f.2,
                  s.0 * f.1 - s.1 * f.0);
+                 
+        let speed = 0.05;
 
         if self.moving_up {
-            self.position.0 += u.0 * 0.01;
-            self.position.1 += u.1 * 0.01;
-            self.position.2 += u.2 * 0.01;
+            self.position.0 += u.0 * speed;
+            self.position.1 += u.1 * speed;
+            self.position.2 += u.2 * speed;
         }
 
         if self.moving_left {
-            self.position.0 -= s.0 * 0.01;
-            self.position.1 -= s.1 * 0.01;
-            self.position.2 -= s.2 * 0.01;
+            self.position.0 -= s.0 * speed;
+            self.position.1 -= s.1 * speed;
+            self.position.2 -= s.2 * speed;
         }
 
         if self.moving_down {
-            self.position.0 -= u.0 * 0.01;
-            self.position.1 -= u.1 * 0.01;
-            self.position.2 -= u.2 * 0.01;
+            self.position.0 -= u.0 * speed;
+            self.position.1 -= u.1 * speed;
+            self.position.2 -= u.2 * speed;
         }
 
         if self.moving_right {
-            self.position.0 += s.0 * 0.01;
-            self.position.1 += s.1 * 0.01;
-            self.position.2 += s.2 * 0.01;
+            self.position.0 += s.0 * speed;
+            self.position.1 += s.1 * speed;
+            self.position.2 += s.2 * speed;
         }
 
         if self.moving_forward {
-            self.position.0 += f.0 * 0.01;
-            self.position.1 += f.1 * 0.01;
-            self.position.2 += f.2 * 0.01;
+            self.position.0 += f.0 * speed;
+            self.position.1 += f.1 * speed;
+            self.position.2 += f.2 * speed;
         }
 
         if self.moving_backward {
-            self.position.0 -= f.0 * 0.01;
-            self.position.1 -= f.1 * 0.01;
-            self.position.2 -= f.2 * 0.01;
+            self.position.0 -= f.0 * speed;
+            self.position.1 -= f.1 * speed;
+            self.position.2 -= f.2 * speed;
         }
     }
 
     pub fn process_input(&mut self, event: &glutin::Event) {
         match event {
-            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::Space)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::W)) => {
                 self.moving_up = true;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::Space)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::W)) => {
                 self.moving_up = false;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::Down)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::S)) => {
                 self.moving_down = true;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::Down)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::S)) => {
                 self.moving_down = false;
             },
             &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::A)) => {
@@ -177,16 +179,16 @@ impl CameraState {
             &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::D)) => {
                 self.moving_right = false;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::W)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::Q)) => {
                 self.moving_forward = true;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::W)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::Q)) => {
                 self.moving_forward = false;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::S)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Pressed, _, Some(glutin::VirtualKeyCode::E)) => {
                 self.moving_backward = true;
             },
-            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::S)) => {
+            &glutin::Event::KeyboardInput(glutin::ElementState::Released, _, Some(glutin::VirtualKeyCode::E)) => {
                 self.moving_backward = false;
             },
             _ => {}

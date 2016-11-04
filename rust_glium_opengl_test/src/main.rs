@@ -29,7 +29,7 @@ fn main() {
         
         
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = (pos.0/10.0, pos.1/10.0 + dir*0.5, pos.2 * 1.5 - 0.75);
+            let pos = (pos.0/10.0, pos.1/10.0 + dir*0.5, pos.2/10.0 + dir*0.5);
             
             let vel: (f32, f32, f32) = (0.0, rand::random(), 0.0);
             let vel = (dir*0.1, (vel.1 * 1.5 - 0.75)/10.0, 0.0);
@@ -58,9 +58,12 @@ fn main() {
         glium::vertex::VertexBuffer::dynamic(&display, &data).unwrap()
     };
 
-    let program = glium::Program::from_source(&display,
+    let program = glium::Program::from_source(&display, // vertex, fragment
         "
             #version 140
+
+            uniform mat4 persp_matrix;
+            uniform mat4 view_matrix;
 
             in vec3 position;
             in vec3 normal;
@@ -73,7 +76,7 @@ fn main() {
                 v_position = position;
                 v_normal = normal;
                 v_color = vec3(float(gl_InstanceID) / 1000.0, 0.5, 1.0 - float(gl_InstanceID) / 1000.0);
-                gl_Position = vec4(position * 0.01 + world_position, 1.0);
+                gl_Position = persp_matrix * view_matrix * vec4(position * 0.01 + world_position, 1.0);
             }
         ",
         "
@@ -94,7 +97,7 @@ fn main() {
         None)
         .unwrap();
 
-    let camera = support::camera::CameraState::new();
+    let mut camera = support::camera::CameraState::new();
     
     // the main loop
     support::start_loop(|| {
@@ -117,7 +120,7 @@ fn main() {
                     
                     if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
                     
-                    let dthr = 0.1;                
+                    let dthr = 0.01;                
             
                     let dnm  = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
                     let mut d    = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
@@ -151,6 +154,14 @@ fn main() {
                 dest.world_position = src.0;
             }
         }
+        
+        camera.update();
+
+        // building the uniforms
+        let uniforms = uniform! {
+            persp_matrix: camera.get_perspective(),
+            view_matrix: camera.get_view(),
+};
 
         // drawing a frame
         let params = glium::DrawParameters {
@@ -165,15 +176,14 @@ fn main() {
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
         target.draw((&vertex_buffer, per_instance.per_instance().unwrap()),
-                    &indices, &program, &uniform! { matrix: camera.get_perspective() },
-                    &params).unwrap();
+                    &indices, &program, &uniforms, &params).unwrap();
         target.finish().unwrap();
 
         // polling and handling the events received by the window
         for event in display.poll_events() {
             match event {
                 glutin::Event::Closed => return support::Action::Stop,
-                _ => ()
+                ev => camera.process_input(&ev),
             }
         }
 

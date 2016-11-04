@@ -28,9 +28,13 @@ Running phase (two object clusters orbiting each other + interaction of objects 
 
 Not much to see so far. Hopefully I will have the time to do something interesting with it.
 
-Update: looks somewhat better now with spheres :) But still much to do (camera controls, perspective, some interaction...).
+Update1: looks somewhat better now with spheres :) But still much to do (camera controls, perspective, some interaction...).
 
 ![screen2](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen2.png)
+
+Update2: camera perspective and basic controls done (WS/AD/QE), no rotation so far. 
+
+![screen3](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen3.png)
 
 
 ## about [Glium](https://github.com/tomaka/glium)
