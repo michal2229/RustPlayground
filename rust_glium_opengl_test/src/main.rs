@@ -73,7 +73,7 @@ fn main() {
                 v_position = position;
                 v_normal = normal;
                 v_color = vec3(float(gl_InstanceID) / 1000.0, 0.5, 1.0 - float(gl_InstanceID) / 1000.0);
-                gl_Position = vec4(position * 0.0001 + world_position, 1.0);
+                gl_Position = vec4(position * 0.01 + world_position, 1.0);
             }
         ",
         "
