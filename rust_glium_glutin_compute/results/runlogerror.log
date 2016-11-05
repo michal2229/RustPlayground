@@ -1,0 +1,5 @@
+    Finished debug [unoptimized + debuginfo] target(s) in 0.0 secs
+     Running `target/debug/glium-glutin-compute`
+thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: BackendCreationError(NotSupported)', ../src/libcore/result.rs:799
+note: Run with `RUST_BACKTRACE=1` for a backtrace.
+error: process didn't exit successfully: `target/debug/glium-glutin-compute` (exit code: 101)

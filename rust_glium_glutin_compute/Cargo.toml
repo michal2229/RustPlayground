@@ -1,0 +1,9 @@
+[package]
+name = "glium_glutin_compute"
+version = "0.1.0"
+authors = ["Michal B. <michal2229@gmail.com>"]
+
+[dependencies]
+glium = "*"
+rand = "0.3"
+
