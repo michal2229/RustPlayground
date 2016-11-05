@@ -10,7 +10,7 @@ I think I am starting to understand the spirit of this language... It also helps
 
 ### examples
 
-#### GPU accelerated 2D particle simulation (multithreaded) using SDL2 with WSAD+- navigation:
+#### 2D particle simulation (multithreaded) using GPU accelerated SDL2 with WSAD+- navigation:
 
 ![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/animated1.gif)
 
