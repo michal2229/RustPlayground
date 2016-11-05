@@ -6,7 +6,10 @@ use glium::glutin;
 fn main() {
     use glium::DisplayBuild;
 
-    let display = glutin::HeadlessRendererBuilder::new(1024, 1024)
+    let display = glutin::WindowBuilder::new()
+        .with_depth_buffer(24)
+        .with_gl_profile(glutin::GlProfile::Core)
+        .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 3)))
         .build_glium()
         .unwrap();
 
