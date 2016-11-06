@@ -14,6 +14,6 @@ I think I am starting to understand the spirit of this language... It also helps
 
 ![Image1](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/animated1.gif)
 
-#### OpenGL 3D particle simulation using glium with WSADQE navigation; object is loaded from file, rendering is defined by vertex and fragment shaders, uses instancing:
+#### OpenGL 3D particle simulation using glium with WSADQE navigation; object is loaded from file, rendering is defined by vertex and fragment shaders, uses instancing, uses compute shaders to compute forces:
 
 ![screen3](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen3.png)

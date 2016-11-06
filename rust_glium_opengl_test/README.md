@@ -5,7 +5,8 @@
 Playing with OpenGL in Rustlang.
 
 An object is loaded from *.obj* file and displayed, while its position is being changed each frame. 
-Changes are computed according to gravity interactions between all objects pairs (single threaded this time). 
+Changes are computed according to gravity interactions between all objects pairs - this can be computed 
+on CPU, but there is also GLSL compute shader based GPU version. 
 
 The initial code is based on [Glium examples](https://github.com/tomaka/glium/tree/master/examples). 
 
