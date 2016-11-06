@@ -8,8 +8,8 @@ use glium::glutin;
 mod support;
 
 fn main() {
-    const GLSL_COMPUTE: bool = false;
-    const NUM_VALUES: usize = 2048;
+    const GLSL_COMPUTE: bool = true;
+    const NUM_VALUES: usize = 1024;
     const DT: f32 = 0.01;
 
     use glium::DisplayBuild;
@@ -17,6 +17,7 @@ fn main() {
     // building the display, ie. the main object
     let display = glutin::WindowBuilder::new()
         .with_depth_buffer(24)
+        .with_dimensions(1920, 1080)
         .with_gl_profile(glutin::GlProfile::Core)
         .with_gl(glutin::GlRequest::Specific(glutin::Api::OpenGl, (4, 3)))
         //.with_multisampling(4 as u16) // not works with compute shader
@@ -37,14 +38,14 @@ fn main() {
         
         
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = ( pos.0*0.1 + dir*0.3, 
-                        pos.1*0.1 + dir*0.3, 
-                        pos.2*0.1 + dir*0.2 );
+            let pos = ( pos.0*0.1 + dir*0.4, 
+                        pos.1*0.1 + dir*0.1, 
+                        pos.2*0.1);
             
             let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let vel = ( (vel.0 * 1.5 - 0.75)*0.5 + dir*0.1, 
-                        (vel.1 * 1.5 - 0.75)*0.5 - dir*0.1, 
-                        (vel.2 * 1.5 - 0.75)*0.5 );
+            let vel = ( (vel.0 * 1.5 - 0.75)*1.0 + dir*0.05, 
+                        (vel.1 * 1.5 - 0.75)*1.0 - dir*0.2, 
+                        (vel.2 * 1.5 - 0.75)*0.2 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
             
@@ -79,7 +80,8 @@ fn main() {
         "
             #version 140
             
-            #define N 2048.0
+            #define N 1024.0
+            #define SCALE 0.005
 
             uniform mat4 persp_matrix;
             uniform mat4 view_matrix;
@@ -87,30 +89,38 @@ fn main() {
             in vec3 position;
             in vec3 normal;
             in vec3 world_position;
+            
             out vec3 v_position;
             out vec3 v_normal;
             out vec3 v_color;
 
             void main() {
+                float dir;
+                if (float(gl_InstanceID) < N/2.0) {dir = -1.0;} else {dir = 1.0;}
+            
                 v_position = position;
-                v_normal = normal;
-                v_color = vec3(float(gl_InstanceID) / N, 0.25, 1.0 - float(gl_InstanceID) / N);
-                gl_Position = persp_matrix * view_matrix * vec4(position * 0.0025 + world_position, 1.0);
+                v_normal = normal;            
+                v_color = vec3(0.5*(1.0 - dir), 0.25, 0.5*(1.0 + dir));
+                gl_Position = persp_matrix * view_matrix * vec4(position * SCALE + world_position, 1.0);
             }
         ",
         "
             #version 140
 
-            in vec3 v_normal;
-            in vec3 v_color;
+            in  vec3 v_normal;
+            in  vec3 v_color;
+            
             out vec4 f_color;
 
-            const vec3 LIGHT = vec3(-0.2, 0.8, 0.1);
+            const vec3 LIGHT = vec3(1.0, 1.0, 1.0);
 
             void main() {
-                float lum = max(dot(normalize(v_normal), normalize(LIGHT)), 0.0);
-                vec3 color = (0.2 + 0.7 * lum) * v_color;
-                f_color = vec4(color, 1.0);
+                float ambient = 0.1;
+                float diffuse = 1.9;
+            
+                float lum     = max(dot(normalize(v_normal), normalize(LIGHT)), 0.0);
+                vec3  color   = (ambient + diffuse*lum)*v_color;
+                f_color       = vec4(color, 1.0);
             }
         ",
         None)
@@ -124,7 +134,7 @@ fn main() {
     let program_cs = glium::program::ComputeShader::from_source(&display, r#"\
             #version 430
             
-            #define N      2048
+            #define N      1024
             #define LSIZEX 1
             
             layout(local_size_x = LSIZEX, local_size_y = 1, local_size_z = 1) in;
@@ -162,7 +172,7 @@ fn main() {
                 float fg;     // gravity force scalar
                 vec3  fgnm;   // temp gravity force vector
                 
-                d_thr = 0.05;                
+                d_thr = 0.001;                
                 tx    = val_in;
                 tm    = val_mid;
                 
@@ -175,7 +185,7 @@ fn main() {
                     dnm  = ox - tx;                      // distance vector
                     dirv = normalize(dnm);               // direction vector
                     
-                    fg   = 0.0001*tm*om/(d*d);   // gravity force scalar
+                    fg   = 0.0002*tm*om/(d*d);   // gravity force scalar
                     fgnm = fg*dirv;              // gravity force vector
                     
                     if (ix == i) fgnm *= 0.0; else fgnm *= 1.0; 
@@ -294,12 +304,12 @@ fn main() {
                     
                     if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
                     
-                    let d_thr = 0.01;                
+                    let d_thr = 0.0001;                
             
-                    let dnm  = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
-                    let mut d    = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
+                    let dnm   = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
+                    let mut d = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
                     if d < d_thr {d = d_thr;}
-                    let dirv = (dnm.0/d, dnm.1/d, dnm.2/d);                          // direction vector
+                    let dirv  = (dnm.0/d, dnm.1/d, dnm.2/d);                          // direction vector
 
                     let fg = 0.0001*tm*om/(d*d);     // gravity force scalar
                     let fgnm = (fg*dirv.0, fg*dirv.1, fg*dirv.2); // gravity force vector
