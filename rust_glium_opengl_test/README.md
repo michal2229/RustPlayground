@@ -4,11 +4,14 @@
 
 Playing with OpenGL in Rustlang.
 
+The initial code is based on [Glium examples](https://github.com/tomaka/glium/blob/master/examples/instancing.rs).
+
 An object is loaded from *.obj* file and displayed, while its position is being changed each frame. 
 Changes are computed according to gravity interactions between all objects pairs - this can be computed 
 on CPU, but there is also GLSL compute shader based GPU version. 
-
-The initial code is based on [Glium examples](https://github.com/tomaka/glium/tree/master/examples). 
+I had some experience with OpenCL but I decided to try compute shaders this time, 
+they have better OpenGL interop after all and I don't need all those OpenCL fancy features in this project.
+ 
 
 ## building and running
 
