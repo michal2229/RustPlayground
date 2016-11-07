@@ -1,6 +1,0 @@
-[package]
-name = "txt_file"
-version = "0.1.0"
-authors = ["Michal B. <michal2229@gmail.com>"]
-
-[dependencies]
