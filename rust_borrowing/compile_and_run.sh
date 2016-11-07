@@ -8,5 +8,5 @@
 
 # cargo build
 cargo build --release # longer build, faster code, makes Cargo.lock
-cargo run # it builds if needed
+cargo run --release # it builds if needed
 
