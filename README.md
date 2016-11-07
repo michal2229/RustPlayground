@@ -1,12 +1,12 @@
-## where am I?
+## My  Rustlang playground
 
 This is my repository containing code, which I emitted during learning Rust language. 
 
 I like graphics and high performance computing, so topics 
 like OpenGL, Vulkan, OpenCL etc. will probably constitute majority of this repo.
 
-Previously I coded mostly in Python3 (NumPy and PyOpenCL for performance, micropython for embedded) and C, so using Rust is quite a change for me. 
-I think I am starting to understand the spirit of this language... It also helps me write better C/C++ code, because *rustc* compiler tells You what You are doing wrong, how to do it right etc., and You can cast this experience to other languages. 
+Previously I coded mostly in C/C++, Java and Python3 (NumPy and PyOpenCL for performance, micropython for embedded), so using Rust is quite a change for me. 
+I think I start to understand the spirit of this language. It helps me write better code in general - *rustc* compiler describes You what You are doing wrong, how to do it right etc., and You can cast this experience, the philosophy of this language, to other low level languages (C/C++ mostly). 
 
 ### examples
 
