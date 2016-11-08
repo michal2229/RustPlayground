@@ -40,6 +40,10 @@ Update2: camera perspective and basic controls done (WS/AD/QE), no rotation so f
 
 ![screen3](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen3.png)
 
+Update3: some performance and visual tweaks. 
+
+![screen4](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen4.png)
+
 
 ## about [Glium](https://github.com/tomaka/glium)
 
