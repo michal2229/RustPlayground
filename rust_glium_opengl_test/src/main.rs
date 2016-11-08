@@ -9,8 +9,9 @@ mod support;
 
 fn main() {
     const GLSL_COMPUTE: bool = true;
-    const NUM_VALUES: usize = 1024;
-    const DT: f32 = 0.01;
+    const NUM_VALUES: usize = 2048;
+    const NUM_GROUPS: usize = 128;
+    const DT: f32 = 0.005;
 
     use glium::DisplayBuild;
 
@@ -35,17 +36,16 @@ fn main() {
     let mut teapots = (0 .. NUM_VALUES)
         .map(|i| {
             let dir = {if i < NUM_VALUES/2 as usize {-1.0} else {1.0}};
-        
-        
+            
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
             let pos = ( pos.0*0.1 + dir*0.4, 
                         pos.1*0.1 + dir*0.1, 
                         pos.2*0.1);
             
             let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let vel = ( (vel.0 * 1.5 - 0.75)*1.0 + dir*0.05, 
-                        (vel.1 * 1.5 - 0.75)*1.0 - dir*0.2, 
-                        (vel.2 * 1.5 - 0.75)*0.2 );
+            let vel = ( (vel.0 * 1.5 - 0.75)*2.5 + dir*0.1, 
+                        (vel.1 * 1.5 - 0.75)*2.5 - dir*0.3, 
+                        (vel.2 * 1.5 - 0.75)*0.01 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
             
@@ -80,7 +80,7 @@ fn main() {
         "
             #version 140
             
-            #define N 1024.0
+            #define N 2048.0
             #define SCALE 0.005
 
             uniform mat4 persp_matrix;
@@ -134,8 +134,16 @@ fn main() {
     let program_cs = glium::program::ComputeShader::from_source(&display, r#"\
             #version 430
             
-            #define N      1024
-            #define LSIZEX 1
+            #define N      2048
+            #define LSIZEX 128
+            
+//            in uvec3 gl_NumWorkGroups;        // Check how many work groups there are. Provided for convenience.
+//            in uvec3 gl_WorkGroupID;          // Check which work group the thread belongs to.
+//            in uvec3 gl_LocalInvocationID;    // Within the work group, get a unique identifier for the thread.
+//            in uvec3 gl_GlobalInvocationID;   // Globally unique value across the entire compute dispatch. 
+//                                              // Short-hand for gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID;
+//            in uint  gl_LocalInvocationIndex; // 1D version of gl_LocalInvocationID. Provided for convenience.
+            
             
             layout(local_size_x = LSIZEX, local_size_y = 1, local_size_z = 1) in;
             
@@ -153,9 +161,11 @@ fn main() {
                 float values_out_z[N];
             };
             
-            void main() {
-                uint ix        = gl_GlobalInvocationID.x;
-                uint maxix     = gl_NumWorkGroups.x*LSIZEX;
+            //shared vec3 shared_data[N];
+            
+            void main() {            
+                uint ix        = gl_GlobalInvocationID.x; //gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+                uint maxix     = N-1; //gl_NumWorkGroups.x*gl_WorkGroupID.x;
                 
                 vec3 val_in    = vec3(values_in_x[ix], values_in_y[ix], values_in_z[ix]);
                 float val_mid  = values_mid[ix];
@@ -176,7 +186,7 @@ fn main() {
                 tx    = val_in;
                 tm    = val_mid;
                 
-                for (int i=0; i<maxix; i++) {
+                for (int i=0; i<N; i++) {
                     // it gets slow here because of non-optimal memory access
                     ox = vec3(values_in_x[i], values_in_y[i], values_in_z[i]); // other object pos
                     om = values_mid[i];                                        // other object mass
@@ -252,7 +262,8 @@ fn main() {
                 }
             }
 
-            program_cs.execute(uniform! { MyBlock: &*buffer }, NUM_VALUES as u32, 1, 1); // Nx1x1 space
+            program_cs.execute(uniform! { MyBlock: &*buffer }, 
+                                (NUM_VALUES/NUM_GROUPS) as u32, 1,  1);
 
             { // reading forces vector from buffer, updating accels, velocities, positions
                 let mapcsbuf = buffer.map();
@@ -282,6 +293,7 @@ fn main() {
                     (teapot.0).2 += (teapot.1).2*DT;
                     
                     //println!("{:?} -> {:?} -> {:?} -> {:?}", pos3d, mass, force3d, teapot.2);
+                    //println!("{:?} -> {:?}", i,  mapcsbuf.values_mid[i]);
 
                     pos_to_write.world_position = teapot.0;
                 }
@@ -304,7 +316,7 @@ fn main() {
                     
                     if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
                     
-                    let d_thr = 0.0001;                
+                    let d_thr = 0.001;                
             
                     let dnm   = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
                     let mut d = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
