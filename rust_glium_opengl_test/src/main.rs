@@ -9,7 +9,7 @@ mod support;
 
 fn main() {
     const GLSL_COMPUTE: bool = true;
-    const NUM_VALUES: usize = 8192;
+    const NUM_VALUES: usize = 16384;
     const NUM_GROUPS: usize = 128;
     const DT: f32 = 0.005;
 
@@ -38,13 +38,13 @@ fn main() {
             let dir = {if i < NUM_VALUES/2 as usize {-1.0} else {1.0}};
             
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = ( pos.0*0.1 + dir*0.3, 
-                        pos.1*0.1 + dir*0.1, 
-                        pos.2*0.1 + dir*0.2);
+            let pos = ( pos.0*0.1 + dir*0.5, 
+                        pos.1*0.1 + dir*0.2, 
+                        pos.2*0.1 + dir*0.4);
             
             let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let vel = ( (vel.0 * 1.5 - 0.75)*1.0 + dir*0.1, 
-                        (vel.1 * 1.5 - 0.75)*1.0 - dir*0.3, 
+            let vel = ( (vel.0 * 1.5 - 0.75)*4.0 + dir*0.1, 
+                        (vel.1 * 1.5 - 0.75)*4.0 - dir*0.3, 
                         (vel.2 * 1.5 - 0.75)*0.01 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
@@ -80,8 +80,8 @@ fn main() {
         "
             #version 140
             
-            #define N 8192.0
-            #define SCALE 0.0025
+            #define N 16384.0
+            #define SCALE 0.001 
 
             uniform mat4 persp_matrix;
             uniform mat4 view_matrix;
@@ -134,7 +134,7 @@ fn main() {
     let program_cs = glium::program::ComputeShader::from_source(&display, r#"\
             #version 430
             
-            #define N      8192
+            #define N      16384
             #define LSIZEX 128
             
 //            in uvec3 gl_NumWorkGroups;        // Check how many work groups there are. Provided for convenience.
@@ -245,12 +245,10 @@ fn main() {
 //    let mut buffer: glium::uniforms::UniformBuffer<Data> =
 //              glium::uniforms::UniformBuffer::empty_unsized(&display, bytes_to_allocate).unwrap();
               
-
     pub struct BufferF32in { values_in: [[f32;4]] }
     implement_buffer_content!(BufferF32in);
     implement_uniform_block!(BufferF32in, values_in);
     let mut buf_in: glium::uniforms::UniformBuffer<BufferF32in> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 4).unwrap();           
-              
               
     pub struct BufferF32mid { values_mid: [f32] }
     implement_buffer_content!(BufferF32mid);

@@ -44,6 +44,12 @@ Update3: some performance and visual tweaks.
 
 ![screen4](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen4.png)
 
+Update4: better, larger buffers, more particles (max 16k). 
+
+![screen5](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen5.png)
+
+![screen6](https://raw.githubusercontent.com/michal2229/Rust-playground/master/rust_glium_opengl_test/results/screen6.png)
+
 
 ## about [Glium](https://github.com/tomaka/glium)
 
