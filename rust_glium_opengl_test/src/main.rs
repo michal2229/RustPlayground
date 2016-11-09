@@ -45,7 +45,7 @@ fn main() {
             let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
             let vel = ( (vel.0 * 1.5 - 0.75)*4.0 + dir*0.1, 
                         (vel.1 * 1.5 - 0.75)*4.0 - dir*0.3, 
-                        (vel.2 * 1.5 - 0.75)*0.01 );
+                        (vel.2 * 1.5 - 0.75)*4.0 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
             
