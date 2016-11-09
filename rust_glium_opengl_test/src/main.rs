@@ -9,7 +9,7 @@ mod support;
 
 fn main() {
     const GLSL_COMPUTE: bool = true;
-    const NUM_VALUES: usize = 2048;
+    const NUM_VALUES: usize = 8192;
     const NUM_GROUPS: usize = 128;
     const DT: f32 = 0.005;
 
@@ -80,7 +80,7 @@ fn main() {
         "
             #version 140
             
-            #define N 2048.0
+            #define N 8192.0
             #define SCALE 0.0025
 
             uniform mat4 persp_matrix;
@@ -134,7 +134,7 @@ fn main() {
     let program_cs = glium::program::ComputeShader::from_source(&display, r#"\
             #version 430
             
-            #define N      2048
+            #define N      8192
             #define LSIZEX 128
             
 //            in uvec3 gl_NumWorkGroups;        // Check how many work groups there are. Provided for convenience.
@@ -161,29 +161,17 @@ fn main() {
 //                float values_out_z[N];
 //            };
             
-            layout(binding = 0) buffer BufferF32in {            
-                float values_in_x[N];
-                float values_in_y[N];
-                float values_in_z[N];
-            };
-            
-            layout(binding = 1) buffer BufferF32mid {                  
-                float values_mid[N];
-            };
-            
-            layout(binding = 2) buffer BufferF32out {            
-                float values_out_x[N];
-                float values_out_y[N];
-                float values_out_z[N];
-            };
+            layout(binding = 0) buffer BufferF32in  { vec4  values_in [N];  };
+            layout(binding = 1) buffer BufferF32mid { float values_mid[N]; };
+            layout(binding = 2) buffer BufferF32out { vec4  values_out[N]; };
             
             //shared vec3 shared_data[N];
             
             void main() {            
                 uint ix        = gl_GlobalInvocationID.x; //gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
-                uint maxix     = N-1; //gl_NumWorkGroups.x*gl_WorkGroupID.x;
+                //uint maxix     = N-1; //gl_NumWorkGroups.x*gl_WorkGroupID.x;
                 
-                vec3 val_in    = vec3(values_in_x[ix], values_in_y[ix], values_in_z[ix]);
+                vec3 val_in    = values_in [ix].xyz;
                 float val_mid  = values_mid[ix];
                 vec3 val_out   = vec3(0.0, 0.0, 0.0);
                 
@@ -198,14 +186,14 @@ fn main() {
                 float fg;     // gravity force scalar
                 vec3  fgnm;   // temp gravity force vector
                 
-                d_thr = 0.01;                
+                d_thr = 0.01;
                 tx    = val_in;
                 tm    = val_mid;
                 
                 for (int i=0; i<N; i++) {
                     // it gets slow here because of non-optimal memory access
-                    ox = vec3(values_in_x[i], values_in_y[i], values_in_z[i]); // other object pos
-                    om = values_mid[i];                                        // other object mass
+                    ox = values_in[i].xyz; // other object pos
+                    om = values_mid[i];    // other object mass
 
                     d    = max(distance(tx, ox), d_thr); // distance scalar
                     dnm  = ox - tx;                      // distance vector
@@ -214,15 +202,17 @@ fn main() {
                     fg   = 0.0002*tm*om/(d*d);   // gravity force scalar
                     fgnm = fg*dirv;              // gravity force vector
                     
-                    if (ix == i) fgnm *= 0.0; else fgnm *= 1.0; 
-                    barrier(); // avoiding dynamic branching
+                    if (ix == i) 
+                        fgnm *= 0.0; 
+                    else 
+                        fgnm *= 1.0; 
+                        
+                    barrier();  // avoiding dynamic branching
                     
-                    val_out += fgnm;
+                    val_out += fgnm;  // adding temp force to out force
                 }
                                 
-                values_out_x[ix] = val_out.x;
-                values_out_y[ix] = val_out.y;
-                values_out_z[ix] = val_out.z;
+                values_out[ix] = vec4(val_out.xyz, 0); // assigning computer force to output buffer
             }
         "#).unwrap();
 
@@ -256,10 +246,10 @@ fn main() {
 //              glium::uniforms::UniformBuffer::empty_unsized(&display, bytes_to_allocate).unwrap();
               
 
-    pub struct BufferF32in { values_in_x: [f32;NUM_VALUES], values_in_y: [f32;NUM_VALUES], values_in_z: [f32] }
+    pub struct BufferF32in { values_in: [[f32;4]] }
     implement_buffer_content!(BufferF32in);
-    implement_uniform_block!(BufferF32in, values_in_x, values_in_y, values_in_z);
-    let mut buf_in: glium::uniforms::UniformBuffer<BufferF32in> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 3).unwrap();           
+    implement_uniform_block!(BufferF32in, values_in);
+    let mut buf_in: glium::uniforms::UniformBuffer<BufferF32in> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 4).unwrap();           
               
               
     pub struct BufferF32mid { values_mid: [f32] }
@@ -267,10 +257,10 @@ fn main() {
     implement_uniform_block!(BufferF32mid, values_mid);
     let mut buf_mid: glium::uniforms::UniformBuffer<BufferF32mid> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 1).unwrap();           
               
-    pub struct BufferF32out { values_out_x: [f32;NUM_VALUES], values_out_y: [f32;NUM_VALUES], values_out_z: [f32] }
+    pub struct BufferF32out { values_out: [[f32;4]] }
     implement_buffer_content!(BufferF32out);
-    implement_uniform_block!(BufferF32out, values_out_x, values_out_y, values_out_z);
-    let mut buf_out: glium::uniforms::UniformBuffer<BufferF32out> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 3).unwrap();
+    implement_uniform_block!(BufferF32out, values_out);
+    let mut buf_out: glium::uniforms::UniformBuffer<BufferF32out> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 4).unwrap();
 
 
 
@@ -295,9 +285,9 @@ fn main() {
                 for i in 0..NUM_VALUES {
                     let pos = teapots[i].0;
                 
-                    mapcsbufin.values_in_x[i] = pos.0;
-                    mapcsbufin.values_in_y[i] = pos.1;
-                    mapcsbufin.values_in_z[i] = pos.2;
+                    mapcsbufin.values_in[i][0] = pos.0;
+                    mapcsbufin.values_in[i][1] = pos.1;
+                    mapcsbufin.values_in[i][2] = pos.2;
                     
                     mapcsbufmid.values_mid[i] = 1.0; 
                 }
@@ -309,14 +299,16 @@ fn main() {
             { // reading forces vector from buffer, updating accels, velocities, positions
                 //let mapcsbuf = buffer.map();
                 
-                let mut mapcsbufmid = buf_mid.map();
-                let mut mapcsbufout = buf_out.map();
+                let mapcsbufin  = buf_in.map();
+                let mapcsbufmid = buf_mid.map();
+                let mapcsbufout = buf_out.map();
                 let mut mapping = per_instance.map();
                 
                 for i in 0..NUM_VALUES {
                     //let pos3d   = (mapcsbuf.values_in_x[i], mapcsbuf.values_in_y[i], mapcsbuf.values_in_z[i]);
+                    let pos3d = (mapcsbufin.values_in[i][0], mapcsbufin.values_in[i][1], mapcsbufin.values_in[i][2]);
                     let mass    =  mapcsbufmid.values_mid[i];
-                    let force3d = (mapcsbufout.values_out_x[i], mapcsbufout.values_out_y[i], mapcsbufout.values_out_z[i]);
+                    let force3d = (mapcsbufout.values_out[i][0], mapcsbufout.values_out[i][1], mapcsbufout.values_out[i][2]);
                   
                     let mut teapot = &mut teapots[i];
                     let mut pos_to_write = &mut mapping[i];
