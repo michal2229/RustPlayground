@@ -38,13 +38,13 @@ fn main() {
             let dir = {if i < NUM_VALUES/2 as usize {-1.0} else {1.0}};
             
             let pos: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let pos = ( pos.0*0.1 + dir*0.4, 
+            let pos = ( pos.0*0.1 + dir*0.3, 
                         pos.1*0.1 + dir*0.1, 
-                        pos.2*0.1);
+                        pos.2*0.1 + dir*0.2);
             
             let vel: (f32, f32, f32) = (rand::random(), rand::random(), rand::random());
-            let vel = ( (vel.0 * 1.5 - 0.75)*2.5 + dir*0.1, 
-                        (vel.1 * 1.5 - 0.75)*2.5 - dir*0.3, 
+            let vel = ( (vel.0 * 1.5 - 0.75)*1.0 + dir*0.1, 
+                        (vel.1 * 1.5 - 0.75)*1.0 - dir*0.3, 
                         (vel.2 * 1.5 - 0.75)*0.01 );
             
             let acc: (f32, f32, f32) = (0.0, 0.0, 0.0);
@@ -81,7 +81,7 @@ fn main() {
             #version 140
             
             #define N 2048.0
-            #define SCALE 0.005
+            #define SCALE 0.0025
 
             uniform mat4 persp_matrix;
             uniform mat4 view_matrix;
@@ -147,15 +147,31 @@ fn main() {
             
             layout(local_size_x = LSIZEX, local_size_y = 1, local_size_z = 1) in;
             
-            layout(std430) buffer MyBlock {
-                float dt;
+//            layout(std430) buffer MyBlock {
+//                float dt;
+//            
+//                float values_in_x[N];
+//                float values_in_y[N];
+//                float values_in_z[N];
+//                
+//                float values_mid[N]; 
+//                
+//                float values_out_x[N];
+//                float values_out_y[N];
+//                float values_out_z[N];
+//            };
             
+            layout(binding = 0) buffer BufferF32in {            
                 float values_in_x[N];
                 float values_in_y[N];
                 float values_in_z[N];
-                
-                float values_mid[N]; 
-                
+            };
+            
+            layout(binding = 1) buffer BufferF32mid {                  
+                float values_mid[N];
+            };
+            
+            layout(binding = 2) buffer BufferF32out {            
                 float values_out_x[N];
                 float values_out_y[N];
                 float values_out_z[N];
@@ -182,7 +198,7 @@ fn main() {
                 float fg;     // gravity force scalar
                 vec3  fgnm;   // temp gravity force vector
                 
-                d_thr = 0.001;                
+                d_thr = 0.01;                
                 tx    = val_in;
                 tm    = val_mid;
                 
@@ -210,34 +226,57 @@ fn main() {
             }
         "#).unwrap();
 
-    struct Data {
-        dt: f32,
-    
-        values_in_x:  [f32;NUM_VALUES], 
-        values_in_y:  [f32;NUM_VALUES], 
-        values_in_z:  [f32;NUM_VALUES], 
-        
-        values_mid:   [f32;NUM_VALUES], 
-        
-        values_out_x: [f32;NUM_VALUES],
-        values_out_y: [f32;NUM_VALUES],
-        values_out_z: [f32],
-    }
+//    struct Data {
+//        dt: f32,
+//    
+//        values_in_x:  [f32;NUM_VALUES], 
+//        values_in_y:  [f32;NUM_VALUES], 
+//        values_in_z:  [f32;NUM_VALUES], 
+//        
+//        values_mid:   [f32;NUM_VALUES], 
+//        
+//        values_out_x: [f32;NUM_VALUES],
+//        values_out_y: [f32;NUM_VALUES],
+//        values_out_z: [f32],
+//    }
 
-    implement_buffer_content!(Data);
-    implement_uniform_block!(Data, 
-                                dt,
-                                values_in_x, 
-                                values_in_y, 
-                                values_in_z, 
-                                values_mid, 
-                                values_out_x, 
-                                values_out_y, 
-                                values_out_z);
-    
-    let bytes_to_allocate: usize = (1 + NUM_VALUES * (3 + 1 + 3)) * 4; // 3d pos, 1d masses, 3d forces 
-    let mut buffer: glium::uniforms::UniformBuffer<Data> =
-              glium::uniforms::UniformBuffer::empty_unsized(&display, bytes_to_allocate).unwrap();
+//    implement_buffer_content!(Data);
+//    implement_uniform_block!(Data, 
+//                                dt,
+//                                values_in_x, 
+//                                values_in_y, 
+//                                values_in_z, 
+//                                values_mid, 
+//                                values_out_x, 
+//                                values_out_y, 
+//                                values_out_z);
+//    
+//    let bytes_to_allocate: usize = (NUM_VALUES * (3 + 1 + 3)) * 4; // 3d pos, 1d masses, 3d forces 
+//    let mut buffer: glium::uniforms::UniformBuffer<Data> =
+//              glium::uniforms::UniformBuffer::empty_unsized(&display, bytes_to_allocate).unwrap();
+              
+
+    pub struct BufferF32in { values_in_x: [f32;NUM_VALUES], values_in_y: [f32;NUM_VALUES], values_in_z: [f32] }
+    implement_buffer_content!(BufferF32in);
+    implement_uniform_block!(BufferF32in, values_in_x, values_in_y, values_in_z);
+    let mut buf_in: glium::uniforms::UniformBuffer<BufferF32in> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 3).unwrap();           
+              
+              
+    pub struct BufferF32mid { values_mid: [f32] }
+    implement_buffer_content!(BufferF32mid);
+    implement_uniform_block!(BufferF32mid, values_mid);
+    let mut buf_mid: glium::uniforms::UniformBuffer<BufferF32mid> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 1).unwrap();           
+              
+    pub struct BufferF32out { values_out_x: [f32;NUM_VALUES], values_out_y: [f32;NUM_VALUES], values_out_z: [f32] }
+    implement_buffer_content!(BufferF32out);
+    implement_uniform_block!(BufferF32out, values_out_x, values_out_y, values_out_z);
+    let mut buf_out: glium::uniforms::UniformBuffer<BufferF32out> = glium::uniforms::UniformBuffer::empty_unsized(&display, (NUM_VALUES * 4) * 3).unwrap();
+
+
+
+
+
+
 
     // END OF COMPUTE SHADER INIT
     
@@ -249,30 +288,35 @@ fn main() {
     
         if GLSL_COMPUTE { // update using shader
             { // filling buffer with points vector, masses vector
-                let mut mapcsbuf = buffer.map();
+                //let mut mapcsbuf = buffer.map();
+                let mut mapcsbufin = buf_in.map();
+                let mut mapcsbufmid = buf_mid.map();
                 
                 for i in 0..NUM_VALUES {
                     let pos = teapots[i].0;
                 
-                    mapcsbuf.values_in_x[i] = pos.0;
-                    mapcsbuf.values_in_y[i] = pos.1;
-                    mapcsbuf.values_in_z[i] = pos.2;
+                    mapcsbufin.values_in_x[i] = pos.0;
+                    mapcsbufin.values_in_y[i] = pos.1;
+                    mapcsbufin.values_in_z[i] = pos.2;
                     
-                    mapcsbuf.values_mid[i] = 1.0; 
+                    mapcsbufmid.values_mid[i] = 1.0; 
                 }
             }
 
-            program_cs.execute(uniform! { MyBlock: &*buffer }, 
+            program_cs.execute(uniform! { BufferF32in: &buf_in, BufferF32mid: &buf_mid, BufferF32out: &buf_out }, //, MyBlock: &buffer
                                 (NUM_VALUES/NUM_GROUPS) as u32, 1,  1);
 
             { // reading forces vector from buffer, updating accels, velocities, positions
-                let mapcsbuf = buffer.map();
+                //let mapcsbuf = buffer.map();
+                
+                let mut mapcsbufmid = buf_mid.map();
+                let mut mapcsbufout = buf_out.map();
                 let mut mapping = per_instance.map();
                 
                 for i in 0..NUM_VALUES {
                     //let pos3d   = (mapcsbuf.values_in_x[i], mapcsbuf.values_in_y[i], mapcsbuf.values_in_z[i]);
-                    let mass    =  mapcsbuf.values_mid[i];
-                    let force3d = (mapcsbuf.values_out_x[i], mapcsbuf.values_out_y[i], mapcsbuf.values_out_z[i]);
+                    let mass    =  mapcsbufmid.values_mid[i];
+                    let force3d = (mapcsbufout.values_out_x[i], mapcsbufout.values_out_y[i], mapcsbufout.values_out_z[i]);
                   
                     let mut teapot = &mut teapots[i];
                     let mut pos_to_write = &mut mapping[i];
@@ -316,7 +360,7 @@ fn main() {
                     
                     if ox.0 == tx.0 && ox.1 == tx.1 && ox.2 == tx.2 { continue; }
                     
-                    let d_thr = 0.001;                
+                    let d_thr = 0.01;                
             
                     let dnm   = (ox.0 - tx.0, ox.1 - tx.1, ox.2 - tx.2);                  // distance vector
                     let mut d = (dnm.0*dnm.0 + dnm.1*dnm.1 + dnm.2*dnm.2).sqrt(); // distance scalar
