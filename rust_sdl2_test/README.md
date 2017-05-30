@@ -81,13 +81,3 @@ cargo build --release && cargo run --release
 
 ![Image2](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/animation.gif)
 
-![Image3](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-16.png)
-
-![Image4](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-20.png)
-
-![Image5](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-30.png)
-
-![Image6](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-53-50.png)
-
-![Image7](https://raw.githubusercontent.com/michal2229/rust-playground/master/rust_sdl2_test/results/screen%202016-10-20%2000-54-01.png)
-
